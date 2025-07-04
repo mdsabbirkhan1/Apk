@@ -46,7 +46,7 @@ class PWAManager {
 
   setupInstallPrompt() {
     window.addEventListener('beforeinstallprompt', (e) => {
-      console.log('beforeinstallprompt event triggered');
+      console.log('✅ beforeinstallprompt event triggered');
       
       // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
@@ -60,13 +60,36 @@ class PWAManager {
 
     // Handle successful installation
     window.addEventListener('appinstalled', (e) => {
-      console.log('App installed successfully');
+      console.log('🎉 App installed successfully');
       this.hideInstallBanner();
       this.deferredPrompt = null;
       
       // Track installation
       this.trackInstallation();
     });
+
+    // Add additional debugging
+    console.log('🔧 PWA Install Prompt Setup Complete');
+    console.log('📱 User Agent:', navigator.userAgent);
+    console.log('🌐 Protocol:', location.protocol);
+    console.log('💻 Platform:', this.getPlatform());
+    
+    // Check installation criteria manually
+    setTimeout(() => {
+      console.log('📋 PWA Installation Check:');
+      console.log('  • HTTPS/Localhost:', location.protocol === 'https:' || location.hostname === 'localhost');
+      console.log('  • Service Worker:', 'serviceWorker' in navigator);
+      console.log('  • Manifest:', !!document.querySelector('link[rel="manifest"]'));
+      console.log('  • Install Prompt Available:', !!this.deferredPrompt);
+      console.log('  • Already Standalone:', this.isStandalone());
+      
+      if (!this.deferredPrompt && !this.isStandalone()) {
+        console.log('⚠️  Install prompt not available. Try:');
+        console.log('    • Chrome: ⋮ Menu → Install ToolFinder');
+        console.log('    • Edge: ⋯ Menu → Apps → Install this site as an app');
+        console.log('    • Safari: Share → Add to Home Screen');
+      }
+    }, 2000);
   }
 
   setupEventListeners() {
@@ -96,6 +119,7 @@ class PWAManager {
   checkInstallability() {
     // Check if app is already installed
     if (this.isStandalone()) {
+      console.log('✅ App is already installed and running in standalone mode');
       return;
     }
 
@@ -107,12 +131,39 @@ class PWAManager {
 
     // Show banner if not dismissed or dismissed more than 3 days ago
     if (!dismissed || (currentTime - dismissedTime) > (dayInMs * 3)) {
-      // Show banner after a delay if beforeinstallprompt hasn't triggered
+      // Show banner after a delay
       setTimeout(() => {
-        if (!this.deferredPrompt && !this.isStandalone()) {
+        if (!this.isStandalone()) {
+          console.log('🔔 Showing install banner');
           this.showInstallBanner();
         }
-      }, 10000); // Show after 10 seconds
+      }, 5000); // Show after 5 seconds (reduced from 10)
+      
+      // If still no prompt after longer delay, show manual instructions
+      setTimeout(() => {
+        if (!this.deferredPrompt && !this.isStandalone()) {
+          console.log('📖 Showing manual installation instructions');
+          this.showManualInstallPrompt();
+        }
+      }, 15000); // Show manual instructions after 15 seconds
+    }
+  }
+
+  showManualInstallPrompt() {
+    // Only show if banner is not already visible
+    if (!this.banner || this.banner.classList.contains('hidden')) {
+      this.showInstallBanner();
+      
+      // Update banner content for manual installation
+      if (this.banner) {
+        const bannerText = this.banner.querySelector('.pwa-banner-text');
+        if (bannerText) {
+          bannerText.innerHTML = `
+            <h3>Install ToolFinder App</h3>
+            <p><strong>Manual Installation:</strong> Use your browser's menu to install this app.</p>
+          `;
+        }
+      }
     }
   }
 
