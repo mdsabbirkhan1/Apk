@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Test - ToolFinder</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .check {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 4px solid #ddd;
+        }
+        .check.pass {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+        .check.fail {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+        }
+        .check.warning {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #results {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 ToolFinder PWA Diagnostic</h1>
+    <p>This page helps diagnose PWA installation issues.</p>
+    
+    <button onclick="runTests()">🧪 Run PWA Tests</button>
+    <button onclick="window.open('./', '_blank')">🚀 Open ToolFinder</button>
+    <button onclick="checkManifest()">📋 Check Manifest</button>
+    
+    <div id="results"></div>
+
+    <script>
+        async function runTests() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h2>🔍 PWA Installability Check</h2>';
+            
+            const checks = [
+                {
+                    name: 'HTTPS or Localhost',
+                    test: location.protocol === 'https:' || location.hostname === 'localhost',
+                    required: true
+                },
+                {
+                    name: 'Service Worker Support',
+                    test: 'serviceWorker' in navigator,
+                    required: true
+                },
+                {
+                    name: 'Manifest Link Present',
+                    test: document.querySelector('link[rel="manifest"]') !== null,
+                    required: true
+                }
+            ];
+
+            // Test manifest
+            try {
+                const manifestResponse = await fetch('./cdn/manifest.json');
+                const manifest = await manifestResponse.json();
+                
+                checks.push({
+                    name: 'Manifest Accessible',
+                    test: manifestResponse.ok,
+                    required: true
+                });
+                
+                checks.push({
+                    name: 'Manifest Has Name',
+                    test: !!(manifest.name || manifest.short_name),
+                    required: true
+                });
+                
+                checks.push({
+                    name: 'Manifest Has Start URL',
+                    test: !!manifest.start_url,
+                    required: true
+                });
+                
+                checks.push({
+                    name: 'Manifest Has Icons',
+                    test: manifest.icons && manifest.icons.length >= 2,
+                    required: true
+                });
+                
+                checks.push({
+                    name: 'Manifest Has 192px Icon',
+                    test: manifest.icons && manifest.icons.some(icon => icon.sizes.includes('192')),
+                    required: true
+                });
+                
+                checks.push({
+                    name: 'Manifest Has 512px Icon',
+                    test: manifest.icons && manifest.icons.some(icon => icon.sizes.includes('512')),
+                    required: true
+                });
+                
+            } catch (error) {
+                checks.push({
+                    name: 'Manifest Load Error',
+                    test: false,
+                    required: true,
+                    error: error.message
+                });
+            }
+
+            // Test service worker
+            try {
+                const registration = await navigator.serviceWorker.getRegistration('./');
+                checks.push({
+                    name: 'Service Worker Registered',
+                    test: !!registration,
+                    required: true
+                });
+                
+                if (registration) {
+                    checks.push({
+                        name: 'Service Worker Active',
+                        test: !!registration.active,
+                        required: false
+                    });
+                }
+            } catch (error) {
+                checks.push({
+                    name: 'Service Worker Error',
+                    test: false,
+                    required: true,
+                    error: error.message
+                });
+            }
+
+            // Display results
+            checks.forEach(check => {
+                const className = check.test ? 'pass' : (check.required ? 'fail' : 'warning');
+                const icon = check.test ? '✅' : (check.required ? '❌' : '⚠️');
+                const errorText = check.error ? `<br><small>Error: ${check.error}</small>` : '';
+                
+                results.innerHTML += `
+                    <div class="check ${className}">
+                        ${icon} ${check.name}${errorText}
+                    </div>
+                `;
+            });
+
+            const failedRequired = checks.filter(c => c.required && !c.test).length;
+            
+            if (failedRequired === 0) {
+                results.innerHTML += `
+                    <div class="check pass">
+                        <strong>🎉 PWA should be installable!</strong><br>
+                        <small>If you don't see the install prompt, try:</small><br>
+                        <small>• Chrome/Edge: Look for install icon in address bar</small><br>
+                        <small>• Safari: Share → Add to Home Screen</small><br>
+                        <small>• Firefox: ☰ Menu → Install</small>
+                    </div>
+                `;
+            } else {
+                results.innerHTML += `
+                    <div class="check fail">
+                        <strong>❌ PWA installation may fail</strong><br>
+                        <small>${failedRequired} required check(s) failed</small>
+                    </div>
+                `;
+            }
+        }
+
+        async function checkManifest() {
+            try {
+                const response = await fetch('./cdn/manifest.json');
+                const manifest = await response.json();
+                console.log('📋 Manifest:', manifest);
+                alert('✅ Manifest loaded successfully! Check console for details.');
+            } catch (error) {
+                console.error('❌ Manifest error:', error);
+                alert('❌ Failed to load manifest: ' + error.message);
+            }
+        }
+
+        // Auto-run tests when page loads
+        window.addEventListener('load', () => {
+            setTimeout(runTests, 500);
+        });
+    </script>
+</body>
+</html>

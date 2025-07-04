@@ -1,6 +1,6 @@
 // Service Worker for ToolFinder PWA
-const CACHE_NAME = 'toolfinder-v1.0.0';
-const DATA_CACHE_NAME = 'toolfinder-data-v1.0.0';
+const CACHE_NAME = 'toolfinder-v1.0.1';
+const DATA_CACHE_NAME = 'toolfinder-data-v1.0.1';
 
 // Static assets to cache
 const FILES_TO_CACHE = [
@@ -10,10 +10,7 @@ const FILES_TO_CACHE = [
   './cdn/js/app.js',
   './cdn/js/tools-data.js',
   './cdn/js/pwa.js',
-  './cdn/manifest.json',
-  // External resources
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'
+  './cdn/manifest.json'
 ];
 
 // URLs to cache dynamically

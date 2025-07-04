@@ -144,6 +144,8 @@ class PWAManager {
   async installApp() {
     if (!this.deferredPrompt) {
       console.log('No install prompt available');
+      // Show a helpful message to the user
+      this.showInstallInstructions();
       return;
     }
 
@@ -158,6 +160,8 @@ class PWAManager {
       
       if (outcome === 'accepted') {
         console.log('User accepted the install prompt');
+        // Show success message
+        this.showInstallSuccess();
       } else {
         console.log('User dismissed the install prompt');
         this.dismissInstallBanner();
@@ -167,7 +171,123 @@ class PWAManager {
       this.deferredPrompt = null;
     } catch (error) {
       console.error('Error during app installation:', error);
+      this.showInstallError(error.message);
     }
+  }
+
+  showInstallInstructions() {
+    const notification = document.createElement('div');
+    notification.className = 'install-instructions';
+    notification.innerHTML = `
+      <div class="install-content">
+        <i class="fas fa-info-circle"></i>
+        <div>
+          <h3>Install ToolFinder</h3>
+          <p>To install this app:</p>
+          <ul>
+            <li><strong>Chrome/Edge:</strong> Click the install icon in the address bar</li>
+            <li><strong>Safari:</strong> Tap Share → Add to Home Screen</li>
+            <li><strong>Firefox:</strong> Use "Install" from the menu</li>
+          </ul>
+        </div>
+        <button class="close-instructions">Got it</button>
+      </div>
+    `;
+
+    // Style the notification
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      background: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-large);
+      z-index: 9999;
+      padding: 1.5rem;
+      max-width: 500px;
+      margin: 0 auto;
+    `;
+
+    document.body.appendChild(notification);
+
+    // Handle close button
+    notification.querySelector('.close-instructions').addEventListener('click', () => {
+      notification.remove();
+    });
+
+    // Auto-remove after 10 seconds
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.remove();
+      }
+    }, 10000);
+  }
+
+  showInstallSuccess() {
+    const notification = document.createElement('div');
+    notification.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <i class="fas fa-check-circle" style="color: var(--success-color); font-size: 1.5rem;"></i>
+        <span>App installed successfully!</span>
+      </div>
+    `;
+    
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--success-color);
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-large);
+      z-index: 9999;
+      animation: slideInRight 0.3s ease;
+    `;
+
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.remove();
+      }
+    }, 3000);
+  }
+
+  showInstallError(errorMessage) {
+    const notification = document.createElement('div');
+    notification.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <i class="fas fa-exclamation-triangle" style="color: white; font-size: 1.5rem;"></i>
+        <div>
+          <strong>Installation failed</strong>
+          <br><small>${errorMessage}</small>
+        </div>
+      </div>
+    `;
+    
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--danger-color);
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-large);
+      z-index: 9999;
+      animation: slideInRight 0.3s ease;
+    `;
+
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.remove();
+      }
+    }, 5000);
   }
 
   isStandalone() {
@@ -298,6 +418,46 @@ class PWAManager {
     };
   }
 
+  // Debug PWA installability
+  async debugInstallability() {
+    const checks = {
+      serviceWorker: 'serviceWorker' in navigator,
+      https: location.protocol === 'https:' || location.hostname === 'localhost',
+      manifest: document.querySelector('link[rel="manifest"]') !== null,
+      beforeInstallPrompt: !!this.deferredPrompt,
+      standalone: this.isStandalone()
+    };
+
+    // Check if manifest is valid
+    if (checks.manifest) {
+      try {
+        const manifestLink = document.querySelector('link[rel="manifest"]');
+        const response = await fetch(manifestLink.href);
+        const manifest = await response.json();
+        checks.manifestValid = !!(manifest.name && manifest.start_url && manifest.icons);
+        checks.manifestIcons = manifest.icons ? manifest.icons.length : 0;
+      } catch (error) {
+        checks.manifestValid = false;
+        checks.manifestError = error.message;
+      }
+    }
+
+    // Check service worker registration
+    if (checks.serviceWorker) {
+      try {
+        const registration = await navigator.serviceWorker.getRegistration();
+        checks.serviceWorkerRegistered = !!registration;
+        checks.serviceWorkerActive = !!(registration && registration.active);
+      } catch (error) {
+        checks.serviceWorkerRegistered = false;
+        checks.serviceWorkerError = error.message;
+      }
+    }
+
+    console.log('PWA Installability Check:', checks);
+    return checks;
+  }
+
   getPlatform() {
     if (this.isIOS()) return 'iOS';
     if (this.isAndroid()) return 'Android';
@@ -311,6 +471,20 @@ class PWAManager {
 // Initialize PWA Manager
 document.addEventListener('DOMContentLoaded', () => {
   window.pwaManager = new PWAManager();
+  
+  // Debug installability after a short delay
+  setTimeout(async () => {
+    const debugInfo = await window.pwaManager.debugInstallability();
+    
+    // Provide helpful console messages
+    if (!debugInfo.beforeInstallPrompt && !debugInfo.standalone) {
+      console.log('💡 PWA Install Tip: The app may already be installed, or the browser doesn\'t support installation yet.');
+      console.log('📱 Try these options:');
+      console.log('  • Chrome/Edge: Look for install icon in address bar');
+      console.log('  • Safari: Share → Add to Home Screen');
+      console.log('  • Firefox: ☰ Menu → Install');
+    }
+  }, 3000);
 });
 
 // Add CSS animation for update notification
