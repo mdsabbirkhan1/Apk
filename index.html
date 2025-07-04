@@ -3,15 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Download My GAMES</title>
-    <link rel="stylesheet" href="styles.css">
+    <meta name="description" content="Discover the best tools for your projects - A comprehensive tool finder platform">
+    <meta name="theme-color" content="#1e40af">
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="./cdn/manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="./cdn/images/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="./cdn/images/icon-512.png">
+    <link rel="apple-touch-icon" href="./cdn/images/icon-192.png">
+    
+    <title>ToolFinder - Discover Amazing Tools</title>
+    
+    <!-- CDN CSS -->
+    <link rel="stylesheet" href="./cdn/css/styles.css">
+    
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <h1>Download My GAMES</h1>
-        <p></p>
-        <button id="downloadBtn">Download APK</button>
+    <!-- App will be dynamically rendered here -->
+    <div id="app">
+        <div class="loading-screen">
+            <div class="loading-spinner"></div>
+            <p>Loading amazing tools...</p>
+        </div>
     </div>
-    <script src="script.js"></script>
+    
+    <!-- PWA Install Banner -->
+    <div id="pwa-install-banner" class="pwa-banner hidden">
+        <div class="pwa-banner-content">
+            <div class="pwa-banner-icon">
+                <i class="fas fa-mobile-alt"></i>
+            </div>
+            <div class="pwa-banner-text">
+                <h3>Install ToolFinder App</h3>
+                <p>Get quick access to all tools from your home screen</p>
+            </div>
+            <div class="pwa-banner-actions">
+                <button id="pwa-install-btn" class="btn btn-primary">Install</button>
+                <button id="pwa-dismiss-btn" class="btn btn-secondary">Later</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- CDN JavaScript -->
+    <script src="./cdn/js/tools-data.js"></script>
+    <script src="./cdn/js/app.js"></script>
+    <script src="./cdn/js/pwa.js"></script>
 </body>
 </html>
